@@ -1,0 +1,757 @@
+#code by: Aman Haris
+#andrew ID: asharis
+
+
+
+#Notes:
+	#don't repeatedly resize images(for quality's sake)
+
+
+
+import pygame
+pygame.init()
+
+#######################################################################################################
+#Classes###############################################################################################
+#######################################################################################################
+
+#class for changing between game states
+class game_events():
+	
+	#event flags
+	loading = True
+	main_screen = False
+	game = False
+	result = False
+
+	
+	#helpers for loading
+	loading_count = 0
+	
+	
+	#helpers for result
+	count = 0
+	winner = ""
+
+
+
+#class that loads all the graphical assets
+class graphics():
+
+########BACKGROUNDS######################################################
+        
+	
+        #loading screen
+	loading_bg = pygame.image.load("./sprites/loading_bg.jpg")
+	
+        #main screen
+	main_bg = pygame.transform.rotozoom(pygame.image.load("./sprites/main_bg.jpg"), 0, 0.7)
+	
+        #storing all the frames of game screen in a list
+	game_bg = []
+	game_bg_max = 10 #how many frames we have
+	for i in range(0,game_bg_max,2):
+		file = "./space/images-0"+"0"*(3 - len(str(i+1))) + str(i+1) + ".png"
+		game_bg.append(pygame.image.load(file))
+	game_bg2 = game_bg.copy()
+	game_bg2.reverse() #appending reversed vision for back-and-forth animations
+	game_bg.extend(game_bg2)
+	game_bg_count = 0 #will be updated to cycle through the frames
+
+
+        #platform models
+	platform = pygame.image.load("./sprites/platform.png")
+	
+        #our particular stage has 3 platforms
+	platform = pygame.transform.rotozoom(platform, 0, 0.09)
+	platform2 = pygame.transform.rotozoom(platform, 0, 0.25)
+	platform3 =  pygame.transform.rotozoom(platform, 0, 0.25)
+
+        #all platforms stored in a list for ease of use
+	platforms = [platform, platform2, platform3]
+
+        #will be updated as per resolution of user's display
+	screen_width = 0
+	screen_height = 0
+	
+
+#########CHARACTER 1 SPRITES#############################################
+
+        #file names of sprites are indexed, so loading through loops
+	character1_idle = []
+	for i in range(10):
+		file = "./sprites/png/Idle__00"+str(i) + ".png"
+		character1_idle += [pygame.image.load(file)]
+
+	character1_run = []
+	for i in range(10):
+		file = "./sprites/png/Run__00"+str(i) + ".png"
+		character1_run += [pygame.image.load(file)]
+
+	character1_side_melee = []
+	for i in range(10):
+		file = "./sprites/png/Jump_Attack__00"+str(i) + ".png"
+		character1_side_melee += [pygame.image.load(file)]
+
+	character1_n_melee = []
+	for i in range(10):
+		file = "./sprites/png/Attack__00"+str(i) + ".png"
+		character1_n_melee += [pygame.image.load(file)]
+
+	#RESIZING CHARACTER1###
+	for j in range(10):
+		character1_run[j] = pygame.transform.rotozoom(character1_run[j], 0, 0.3)
+		character1_idle[j] = pygame.transform.rotozoom(character1_idle[j], 0, 0.3)
+		character1_side_melee[j] = pygame.transform.rotozoom(character1_side_melee[j], 0, 0.3)
+		character1_n_melee[j] = pygame.transform.rotozoom(character1_n_melee[j], 0, 0.3)
+
+		#Info is stored in this dictionary for use in other classes
+		character1 = {}
+		character1['run'] = character1_run
+		character1['idle'] = character1_idle
+		character1['side_melee'] = character1_side_melee
+		character1['n_melee'] = character1_n_melee
+		character1['jump'] = character1_run
+
+
+#########CHARACTER 2 SPRITES#############################################
+
+
+	character2_idle = []
+	for i in range(10):
+		file = "./png2/Idle ("+str(i+1) + ").png"
+		character2_idle += [pygame.image.load(file)]
+
+	character2_run = []
+	for i in range(10):
+		file = "./png2/Run ("+str(i+1) + ").png"
+		character2_run += [pygame.image.load(file)]
+
+	character2_side_melee = []
+	for i in range(10):
+		file = "./png2/JumpAttack ("+str(i+1) + ").png"
+		character2_side_melee += [pygame.image.load(file)]
+
+	character2_n_melee = []
+	for i in range(10):
+		file = "./png2/Attack ("+str(i+1) + ").png"
+		character2_n_melee += [pygame.image.load(file)]	
+
+	
+	#RESIZING CHARACTER2###
+	for j in range(10):
+		character2_run[j] = pygame.transform.rotozoom(character2_run[j], 0, 0.2)
+		character2_idle[j] = pygame.transform.rotozoom(character2_idle[j], 0, 0.2)
+		character2_side_melee[j] = pygame.transform.rotozoom(character2_side_melee[j], 0, 0.2)
+		character2_n_melee[j] = pygame.transform.rotozoom(character2_n_melee[j], 0, 0.2)
+
+
+	#Info is stored in this dictionary for use in other classes
+	character2 = {}
+	character2['run'] = character2_run
+	character2['idle'] = character2_idle
+	character2['side_melee'] = character2_side_melee
+	character2['n_melee'] = character2_n_melee
+	character2['jump'] = character2_run
+	
+######################################PROJECTILE ATTACK##################
+
+	p_attack = [pygame.image.load("./sprites/ki_blasts1.png"),
+                  pygame.image.load("./sprites/ki_blasts2.png"),
+	          pygame.image.load("./sprites/ki_blasts3.png"),
+                  pygame.image.load("./sprites/ki_blasts4.png"),
+                  pygame.image.load("./sprites/ki_blasts5.png")]
+	for i in range(5):
+		p_attack[i] = pygame.transform.rotozoom(p_attack[i], 0, 0.015)
+
+###############################################HEALTH BAR###############
+
+	healthbar_frame = pygame.image.load("./sprites/healthbar_frame.png")
+	healthbar_body = pygame.image.load("./sprites/healthbar_body.png")
+
+
+
+
+class platform():
+	def __init__(self, x, y, width, height):
+		self.x = x
+		self.y = y
+		self.width = width
+		self.height = height
+		self.hitbox = (self.x, self.y, self.width, self.height)
+
+
+
+class character():
+	def __init__(self, x, y, name, velocity, sprites, vel_i = 0):
+		
+		#Basics######
+		self.name = name
+		
+		#sprites
+		self.sprites = sprites
+			#sprites is a dictionary with the keys 'idle', 'run', etc. and their list of sprites.
+
+
+		#dimensions
+		self.width = self.sprites['idle'][1].get_width()
+		self.height = self.sprites['idle'][1].get_height()
+		
+		#velocity in x-axis
+		self.vel = vel_i
+		self.vel0 = velocity
+
+		#velocity in y-axis
+		self.vel_y = 0#default 0, when they are standing on a platform
+		self.vel_y0 = 50 #jump velocity for character
+		
+		#positions: x and y are constantly updated in code, x0 and y0 are the starting positon
+		self.y = y
+		self.y0 = y
+		self.x = x
+		self.x0 = x
+
+		#hitbox: borders of the sprite, for collisions
+		self.hitbox = (self.x, self.y, self.width, self.height)
+
+			
+		#Player states for sprite determination:
+			#It's all put in a dictionary for ease of manipulation,
+			# as each state is mutually exclusive (see changeState function)
+		
+		self.sprite_state = {}
+		self.sprite_state['idle'] = True
+		self.sprite_state['run'] = False
+		self.sprite_state['side_melee'] = False
+		self.sprite_state['n_melee'] = False
+		self.sprite_state['jump'] = False
+
+		#helpers:
+		self.double_jumped = False #can double jump when false
+		self.btn_pressed_once = False #used for determining if a btn is tapped twice
+		self.jump_t1 = 0 #used to create a time interval for jumps
+		self.jump_t2 = 0		
+
+		
+
+		#other player states:
+		self.direction = 1 #1 means the player is facing right, and -1 for left.
+		self.health = 100
+		self.health_ratio = self.health/100 #The initial/full health
+		self.costume_count = 0 #indexing for going through list of sprite animation
+		self.projectiles = [] #all projectile attacks generated by self
+
+
+
+	def changeState(self, state):
+		if not ((self.sprite_state['n_melee'] or self.sprite_state['side_melee'])and self.costume_count%10 != 0):
+			for key in self.sprite_state:
+				#all keys except state is set to False
+				if key!=state:
+					self.sprite_state[key] = False
+				#if the state was not already true, it's set to true and costume count is set to 0
+				elif not self.sprite_state[key]:
+					self.sprite_state[key] = True
+					#self.costume_count = 0
+
+
+##################################################################################################
+#####FUNCTIONS####################################################################################
+##################################################################################################
+
+
+
+					
+def friction(player):
+	if not (player.y < player.y0):
+		if player.vel != 0:
+			sign = player.vel/ abs(player.vel)
+			player.vel -= sign*abs(player.vel)/5
+			if player.vel < 2 and player.vel > -2:
+				player.vel = 0
+
+def gravity(player, y0):
+	if player.y<y0:
+		player.vel_y -= 10
+	else:
+		player.y = y0
+		if player.sprite_state['jump']:
+			player.changeState('idle')
+		player.vel_y = 0
+
+def update_coords(players):
+	for player in players:
+		player.x += player.vel
+		#if player is not on the ground:
+		if player.y - player.vel_y < player.y0:
+			player.y -= player.vel_y
+		else:
+			player.y = player.y0
+
+def moveRight(player):
+	if player.vel < player.vel0:
+		player.vel += 5
+	player.changeState('run')
+	player.direction = 1
+
+def moveLeft(player):
+	if player.vel > -1*player.vel0:
+		player.vel -= 5
+	player.changeState('run')
+	player.direction = -1
+
+def jump(player):
+	if player.y == player.y0:
+		player.jump_t1 = pygame.time.get_ticks()
+		player.double_jumped = False
+		player.btn_pressed_once = False
+		player.vel_y = 40  #30 for normal jumps #40 for super-jumps
+		player.changeState('jump')
+	else:
+		if not player.double_jumped and player.btn_pressed_once:
+			player.jump_t2 = pygame.time.get_ticks()
+			if player.jump_t2-player.jump_t1 > 100:
+				player.vel_y = 40
+				player.double_jumped = True
+		else:
+			player.vel_y += 2*player.vel_y/5
+			if player.vel_y > 60:
+				player.vel_y = 30
+
+
+
+def updateHitbox(players):
+	for player in players:
+		player.hitbox = (player.x, player.y, player.width, player.height)
+
+
+def updateScreen(player):
+ #determine player state to pick correct sprites
+        state = ""
+        for key in player.sprite_state:
+                if player.sprite_state[key]:
+                        state = key
+
+        image = player.sprites[state][player.costume_count%10]
+        if player.direction == -1:
+                image = pygame.transform.flip(image, True, False)
+	
+        win.blit(image, (player.x, player.y))
+        player.costume_count += 1
+
+def update_inputs(inputs, player):
+	if inputs == ["left"]:
+		moveLeft(player)
+
+	if inputs == ["right"]:
+		moveRight(player)
+
+	if inputs == ["up"] or inputs == ["left", "up"] or inputs == ["right", "up"] or inputs == ["left", "right", "up"]:
+		if not (player.sprite_state['side_melee'] or player.sprite_state['n_melee']):
+			jump(player)
+
+	if inputs == ["right", "p"]:
+		player.direction = 1
+		#if not player1.sprite_state['jump']:
+		player.changeState('side_melee')
+
+	if inputs == ["left", "p"]:
+		player.direction = -1
+		player.changeState('side_melee')
+
+	if inputs == ["p"]:
+		player.changeState('n_melee')
+
+#deals with collisions and damage
+def updateHits(player1, player2):
+	hitbox = pygame.Rect(player1.hitbox)
+	if hitbox.colliderect(player2.hitbox):
+		#neutral attacks
+		if player1.sprite_state['n_melee']:
+			if player1.costume_count > 5:
+				player2.health -= 10
+				player2.health_ratio = player2.health/100
+				if player2.health <= 0.05:
+					player2.health_ratio = 0.1
+				if player2.health <= 0:
+					player2.health = 0
+					player2.health_ratio = 0.05
+				player2.vel = 2*player1.direction/(player2.health_ratio/5)//5*5
+				player2.vel_y = 2/(player2.health_ratio/5)//5*5
+                #side attacks
+		elif player1.sprite_state['side_melee']:
+			if player1.costume_count > 5:
+				player2.health -= 5
+				player2.health_ratio = player2.health/100
+				if player2.health <= 0.05:
+					player2.health_ratio = 0.1
+				if player2.health <= 0:
+					player2.health = 0
+					player2.health_ratio = 0.05
+				player2.vel = 3*player1.direction/(player2.health_ratio/5)//5*5
+				player2.vel_y = 1/(player2.health_ratio/5)//5*5
+
+                #projectile attacks
+		elif player1.name == 'projectile':
+			player2.health -= 2
+			if player2.health <= 0:
+				player2.health = 0
+			player2.vel += 2
+			return True
+	
+	if player1.projectiles:
+		removals = []
+		for i in range(len(player1.projectiles)):
+			isHit = updateHits(player1.projectiles[i], player2)
+			if isHit:
+				removals += [i]
+			#also going to remove any projectiles off the screen
+			elif (player1.projectiles[i].x > graphics.screen_width 
+				or player1.projectiles[i].x < 0):
+				removals += [i]
+		removals.reverse()
+		for index in removals:
+			del player1.projectiles[index]
+
+
+
+#determines y0 (where a player can stand)
+def getPlatformBelow(player, platforms):
+	hitbox = pygame.Rect(player.hitbox)
+	player.y0 = graphics.screen_height
+	for platform in platforms:
+		if hitbox.colliderect(platform.hitbox[0], 0, platform.hitbox[2], graphics.screen_height):
+			if player.y <= platform.hitbox[1] - player.height:
+				if (platform.hitbox[1] - player.height - player.y) <= (player.y0 - player.y):
+					player.y0 = platform.hitbox[1] - player.height
+
+#loading screen
+def loading(win):
+	if game_events.loading:
+		text = 'Loading'
+		myfont = pygame.font.SysFont('Lato', 40)
+		textsurface = myfont.render(text, False, (255, 255, 255))
+		x0 = win.get_width()/2 - textsurface.get_width()/2
+		if game_events.loading_count//15%5==1:
+			text = "Loading"
+		if game_events.loading_count//15%5 == 2:
+			text = "Loading."
+		if game_events.loading_count//15%5 == 3:
+			text = "Loading.."
+		if game_events.loading_count//15%5 == 4:
+			text = "Loading..."
+		textsurface = myfont.render(text, False, (255, 255, 255))
+		win.blit(graphics.loading_bg, (0,0))
+		if game_events.loading_count < (win.get_width()/5):
+			pygame.draw.rect(win, (255,255,255), (win.get_width()*2/5-2, win.get_height()*2/3-2, win.get_width()/5+2 , 17), 1)		
+			pygame.draw.rect(win, (0,255,0), (win.get_width()*2/5, win.get_height()*2/3, game_events.loading_count, 15))
+			win.blit(textsurface, (x0,500))
+		else:
+			game_events.loading = False
+			game_events.main_screen = True
+
+		game_events.loading_count+=5
+
+
+
+	
+
+
+#################################################################################################
+#Initialization##################################################################################
+
+#load window
+win = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
+
+#Adapt image sizes to window size:
+
+(graphics.screen_width, graphics.screen_height) = (win.get_width(), win.get_height())
+
+width_ratio = graphics.screen_width/graphics.game_bg[0].get_width()
+height_ratio = graphics.screen_height/graphics.game_bg[0].get_height()
+
+if width_ratio < height_ratio:
+	for i in range(len(graphics.game_bg)):
+		graphics.game_bg[i] = pygame.transform.rotozoom(graphics.game_bg[i], 0, width_ratio)
+		graphics.game_bg[i] = graphics.game_bg[i].convert_alpha()
+else:
+	for i in range(len(graphics.game_bg)):
+		graphics.game_bg[i] = pygame.transform.rotozoom(graphics.game_bg[i], 0, height_ratio)
+		graphics.game_bg[i] = graphics.game_bg[i].convert_alpha()
+			
+
+
+#####LOAD PLAYERS#################################################################################
+player1 = character(1300, graphics.screen_height*3/5, "Player Ninja", 30, graphics.character1)
+player2 = character(500, graphics.screen_height*3/5, "Player Knight", 30, graphics.character2)
+
+players = [player1,player2]
+
+player1.direction = -1
+
+#####LOAD MUSIC########
+music = "./sprites/spider_dance.mp3"
+pygame.mixer.music.load(music)
+pygame.mixer.music.play(-1)
+
+#####Create platforms for stage#####
+platform1 = platform(graphics.screen_width/5,
+                     graphics.screen_height*4/5,
+                     graphics.platform.get_width(),
+                     graphics.platform.get_height())
+
+platform2 = platform(graphics.screen_width/5 - graphics.platform2.get_width()/2,
+                     graphics.screen_height*3/5,
+                     graphics.platform2.get_width(),
+                     graphics.platform2.get_height())
+
+platform3 = platform(graphics.screen_width*3/5 + graphics.platform3.get_width()/2,
+                     graphics.screen_height*3/5,
+                     graphics.platform3.get_width(),
+                     graphics.platform3.get_height())
+
+
+platforms = [platform1, platform2, platform3]
+
+
+#Game loop###################################################################################
+#############################################################################################
+
+
+
+run = True
+while run:
+	pygame.time.delay(30)
+
+	for event in pygame.event.get():
+		
+		#loop exit
+		if event.type == pygame.QUIT:
+			run = False
+			break
+
+        #make loading screen
+	loading(win)
+
+        #switch to menu after loading
+	if game_events.main_screen:
+		win.blit(graphics.main_bg, (0,0))
+		myfont = pygame.font.SysFont('Lato', 40)
+		textsurface1 = myfont.render('Start Game', False, (255, 255, 255))
+		textsurface2 = myfont.render('Credits', False, (255, 255, 255))
+		textsurface3 = myfont.render('Quit Game', False, (255, 255, 255))
+
+		texts = [textsurface1, textsurface2, textsurface3]
+		commands = ["game", "credit", "quit"]
+
+		#making buttons
+		for i in range(len(texts)):
+		
+			x0 = win.get_width()*3//4
+			y0 = win.get_height()//5
+			y = y0*(i+1)
+
+			textborder = (x0-10, y-10, texts[i].get_width()+20, texts[i].get_height()+20)
+
+			(mx, my) = pygame.mouse.get_pos()
+			if mx > x0 and mx < x0+texts[i].get_width() and my > y and my < y+texts[i].get_height():
+				pygame.draw.rect(win, (255, 255, 255), textborder, 2)
+				if pygame.mouse.get_pressed()[0]:
+					if commands[i] == "quit":
+						run = False
+						break
+					if commands[i] == "game":
+						game_events.game = True
+						game_events.main_screen = False
+
+			win.blit(texts[i], (x0, (i+1)*y0))
+
+
+        #the main game
+	if game_events.game:
+		
+		updateHitbox(platforms)
+
+		getPlatformBelow(player1, platforms)
+		getPlatformBelow(player2, platforms)
+
+		gravity(player1, player1.y0)
+		gravity(player2, player2.y0)
+
+		friction(player1)
+		friction(player2)
+		
+
+		keys = pygame.key.get_pressed()
+		inputs1 = []
+		inputs2 = []
+
+	###################################################PLAYER 1 CONTROL#####################
+
+
+		if keys[pygame.K_LEFT]:
+			inputs1 += ["left"]
+
+		if keys[pygame.K_RIGHT]:
+			inputs1 += ["right"]
+
+		else:
+			if not player1.sprite_state['jump']:
+				player1.changeState('idle')
+
+		if keys[pygame.K_UP]:
+			inputs1 += ["up"]
+
+		else:
+			player1.btn_pressed_once = True
+
+		if keys[pygame.K_p]:
+			inputs1 += ["p"]
+
+
+
+
+	####################################################PLAYER 2 CONTROL####################
+
+		if keys[pygame.K_a]:
+			inputs2 += ["left"]
+
+		if keys[pygame.K_d]:
+			inputs2 += ["right"]
+
+		else:
+			if not player2.sprite_state['jump']:
+				player2.changeState('idle')
+
+		if keys[pygame.K_w]:
+			inputs2 += ["up"]
+
+		if keys[pygame.K_SPACE]:
+			if len(player2.projectiles)<=5:
+				player2.projectiles += [character(player2.x + player2.width/2 + player2.direction*player2.width,
+								 player2.y + player2.height/2, "projectile", 50, {'idle': graphics.p_attack}, 
+								 vel_i = player2.direction*50)]
+
+		if keys[pygame.K_c]:
+			inputs2 += ["p"]
+
+
+	####################################################################################################
+		
+		if keys[pygame.K_ESCAPE]:
+			run = False
+			break
+				
+	####################################################################################################
+
+                #updating events
+
+		update_inputs(inputs1, player1)
+		update_inputs(inputs2, player2)
+
+		updateHitbox(platforms)
+		updateHitbox(players)
+		updateHitbox(player2.projectiles)
+
+		updateHits(player1, player2)
+		updateHits(player2, player1)
+
+		update_coords(players)
+		update_coords(player2.projectiles)
+
+		#platform updates
+		if (graphics.game_bg_count%(8*graphics.game_bg_max)) < 4*graphics.game_bg_max:
+			if player1.y + player1.height == platform2.y:
+				player1.y -= graphics.game_bg_count%4
+				player1.y0 = player1.y
+			if player2.y + player2.height == platform2.y:
+				player2.y -= graphics.game_bg_count%4
+				player2.y0 = player2.y
+			platform2.y -= graphics.game_bg_count%4
+			if player1.y + player1.height == platform3.y:
+				player1.y -= graphics.game_bg_count%4
+				player1.y0 = player1.y
+			if player2.y  + player2.height == platform3.y:
+				player2.y -= graphics.game_bg_count%4
+				player2.y0 = player2.y
+			platform3.y -= graphics.game_bg_count%4
+		if (graphics.game_bg_count%(8*graphics.game_bg_max)) > 4*graphics.game_bg_max:
+			platform2.y += graphics.game_bg_count%4
+			platform3.y += graphics.game_bg_count%4
+
+
+        #updating display
+                
+		win.blit(graphics.game_bg[graphics.game_bg_count%graphics.game_bg_max], (0,0))
+		graphics.game_bg_count += 1
+
+		updateScreen(player1)
+		updateScreen(player2)
+
+		for projectile in player2.projectiles:
+			win.blit(graphics.p_attack[4], (projectile.x, projectile.y))
+
+                #platforms
+		for i in range(3):
+			win.blit(graphics.platforms[i], (platforms[i].hitbox[0], platforms[i].hitbox[1]))
+			
+		pygame.draw.rect(win, (255,0,255), platform1.hitbox, 10)
+		pygame.draw.rect(win, (255,0,255), platform2.hitbox, 10)
+		pygame.draw.rect(win, (255,0,255), platform3.hitbox, 10)
+
+                #healthbars
+		h_coeff = graphics.healthbar_body.get_width()
+		win.blit(pygame.transform.flip(graphics.healthbar_frame, True, False), (225,150))
+		win.blit(pygame.transform.flip(graphics.healthbar_body, True, False), (225,150), (0, 0, 355*player2.health/100, 200))
+		win.blit(graphics.healthbar_frame, (1300,150))
+		win.blit(pygame.transform.flip(graphics.healthbar_body, True, False), (1345,150), (0, 0, 355*player1.health/100, 200))
+
+        
+        #Checking for win/loss                
+		if (player1.y >= graphics.screen_height 
+			or player1.x < -1*graphics.screen_width 
+			or player1.x > 2*graphics.screen_width):
+			
+			game_events.game = False
+			game_events.result = True
+			game_events.winner = player2.name
+
+		if (player2.y >= graphics.screen_height 
+			or player2.x < -1*graphics.screen_width 
+			or player2.x > 2*graphics.screen_width):
+			game_events.game = False
+			game_events.result = True
+			game_events.winner = player1.name
+
+        #End of game and displaying results
+	if game_events.result:
+                #continue blitting bg
+		win.blit(graphics.game_bg[graphics.game_bg_count%graphics.game_bg_max], (0,0))
+		graphics.game_bg_count += 1
+		#display result
+		myfont = pygame.font.SysFont('Lato', 50)
+		textsurface = myfont.render(game_events.winner+" won!", False, (255, 255, 255))
+		win.blit(textsurface, (800,600))
+		#track time
+		game_events.count += 1
+		if game_events.count == 50:
+                        #re-initialize everything
+			game_events.result = False
+			game_events.main_screen = True
+			game_events.count = 0
+			player1.x = player1.x0
+			player2.x = player2.x0
+			player1.y = graphics.screen_height*4/5 - 250
+			player2.y = graphics.screen_height*4/5 - 250
+			player1.vel = 0
+			player1.vel_y = 0
+			player2.vel = 0
+			player2.vel_y = 0
+			player1.direction = -1
+			player2.direction = 1
+			player1.health = 100
+			player2.health = 100
+
+
+	pygame.display.update()
+pygame.quit()
