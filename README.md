@@ -26,7 +26,7 @@ and main menu background, as well as the music. Here are the citations.
 
 1)Falling Snow Animation:
 	Free Realistic Snow Overlay by Kosmos Motion Graphics
-	https://www.youtube.com/watch?v=vEhD5WwCo44 by 
+	https://www.youtube.com/watch?v=vEhD5WwCo44 
 
 2)Space Animation:
 	DeepSpace Nebula by CyberWebFX
@@ -43,6 +43,12 @@ and main menu background, as well as the music. Here are the citations.
 	https://www.youtube.com/watch?v=v766-h3g00s
 	by Sodah
 
+
+########################################################################################
+15112 Update: This Repository was technically made a few minutes past the deadline.
+That's because this Repository is a joined version of my original repopsitories 
+for the game which were separated and annoying to download. The original was frozen 
+within the deadline and shown to the CA. They are currently private and archived. 
 
 ########################################################################################
 
