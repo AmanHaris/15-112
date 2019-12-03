@@ -46,7 +46,7 @@ and main menu background, as well as the music. Here are the citations.
 
 ########################################################################################
 15112 Update: This Repository was technically made a few minutes past the deadline.
-That's because this Repository is a joined version of my original repopsitories 
+That's because this Repository is a joined version of my original repositories 
 for the game which were separated and annoying to download. The original was frozen 
 within the deadline and shown to the CA. They are currently private and archived. 
 
