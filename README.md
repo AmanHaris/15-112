@@ -21,8 +21,28 @@ This game has not been tested on macs due to a lack of macs at home.
 
 ########################################################################################
 
-Almost all assets are self made, except for the character sprites, 2 animated backgrounds, 
-and main menu background, as well as the music. All citations are in the main folder description.
+Almost all assets are self-made, except for the character sprites, 2 animated backgrounds, 
+and main menu background, as well as the music. Here are the citations.
+
+1)Falling Snow Animation:
+	Free Realistic Snow Overlay by Kosmos Motion Graphics
+	https://www.youtube.com/watch?v=vEhD5WwCo44 by 
+
+2)Space Animation:
+	DeepSpace Nebula by CyberWebFX
+	https://www.youtube.com/watch?v=EaM9kDPa_AY
+
+3)Character Sprites:
+	https://www.gameart2d.com/freebies.html
+
+4)Main Menu Background:
+	https://wallhere.com/en/wallpaper/82831
+	by Wiz
+
+5)Music:
+	https://www.youtube.com/watch?v=v766-h3g00s
+	by Sodah
+
 
 ########################################################################################
 
